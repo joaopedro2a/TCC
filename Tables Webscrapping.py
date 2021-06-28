@@ -101,35 +101,46 @@ for item in df_results.index:
 
 full_df= pd.DataFrame()
 for url in links:
-    page=requests.get(url)
-    soup=BeautifulSoup(page.text,'html.parser')
+    try:
+        page=requests.get(url)
+        soup=BeautifulSoup(page.text,'html.parser')
 
-    table=soup.find_all('table')
+        home_table=soup.find_all(class_="team_general_table tablesorter")
+        away_table=soup.find_all(class_="team_two_table tablesorter")
 
-#essa parte temos que revisar! como pegar a tabela do time de casa e fora sem ser assim?
-    home=table[0]
-    away=table[5]
+    #essa parte temos que revisar! como pegar a tabela do time de casa e fora sem ser assim?
+        try:
+            home=home_table[0]
+            away=away_table[0]
+        except:
+            home_table=soup.find_all(class_="stats_real_time_table_home")
+            away_table=soup.find_all(class_="stats_real_time_table_away")
+            home=home_table[0]
+            away=away_table[0]
 
-    results=[]
-    for row in home.find_all('tr'):
-        result=[]
-        result.append("Home"+row.text.replace("\n\r\n",",").replace(" ","").replace("\n",","))
-        results.append(result)
+        results=[]
+        for row in home.find_all('tr'):
+            result=[]
+            result.append("Home"+row.text.replace("\n\r\n",",").replace(" ","").replace("\n",","))
+            results.append(result)
     
 
-    for row in away.find_all('tr'):
-        result=[]
-        result.append("Away"+row.text.replace("\n\r\n",",").replace(" ","").replace("\n",","))
-        results.append(result)
+        for row in away.find_all('tr'):
+            result=[]
+            result.append("Away"+row.text.replace("\n\r\n",",").replace(" ","").replace("\n",","))
+            results.append(result)
     
-    df = pd.DataFrame(results,columns=['Full Data'])
-    df['URL']=url
-    full_df=full_df.append(df)
-    print("Ok")
+        df = pd.DataFrame(results,columns=['Full Data'])
+        df['URL']=url
+        full_df=full_df.append(df)
+        print("Ok")
+    except:
+        print("Error->"+str(url))
+        pass
 
 
 full_df[['Home/Away','Nr.','Jogador','JO','Min','Pts','RD+RORT','AS','3P%','2P%','LL%','BR','TO','FC','FR','ER','EN','+/-','EF','TBD2']] = df['Full Data'].str.split(',',expand=True)
 full_df = full_df.drop(columns=['TBD2','Full Data'])
-full_df=full_df[(df['Nr.'] != 'Nr.')]
+full_df=full_df[(full_df['Nr.'] != 'Nr.')]
 full_df=full_df.reset_index(drop=True)
-full_df.to_csv("C:\\Users\\fcastro\\OneDrive - Digicorner\\TCC\\BRILHAMOS.csv")
+full_df.to_csv("C:\\Users\\fcastro\\OneDrive - Digicorner\\TCC\\BRILHAMOS_v3.csv")

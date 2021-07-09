@@ -96,7 +96,32 @@ for item in df_results.index:
     links.append(df_results['Report Link'][item])
 
 full_df= pd.DataFrame()
+
+# Problema dessa abordagem --> Nao consigo pegar a linha relacionada a equipe por esse metodo
+# Vejo 2 soluçoes: (1) a gente pega manualmente essa ultima linha ou (2) Ja que a gente tem os dados dos jogadores, podemos calcular o da equipe a partir destes dados
+
 for url in links:
+    try:
+        page = requests.get(url)
+        soup = BeautifulSoup(page.text, 'html.parser')
+
+        full_df= pd.DataFrame()
+        dfs = pd.read_html(page.text) #Aqui ele ja coloca em dataframe todas as tabelas que ele reconhcer na pagina
+
+        for i in range(2): #As duas primeiras sao as estats do Home team e Away team, respectivamente
+            if i == 0:
+                dfs[i]['Home/Away'] = 'Home'
+            else:
+                dfs[i]['Home/Away'] = 'Away'
+            dfs[i]['URL'] = url
+            full_df=full_df.append(dfs[i])
+    except:
+        print("Error->"+str(url))
+
+full_df=full_df.reset_index(drop=True)
+full_df.to_csv("BRILHAMOS_v3.csv")
+    
+'''
     try:
         page=requests.get(url)
         soup=BeautifulSoup(page.text,'html.parser')
@@ -140,3 +165,6 @@ full_df = full_df.drop(columns=['TBD2','Full Data'])
 full_df=full_df[(full_df['Nr.'] != 'Nr.')]
 full_df=full_df.reset_index(drop=True)
 full_df.to_csv("C:\\Users\\fcastro\\OneDrive - Digicorner\\TCC\\BRILHAMOS_v3.csv")
+
+'''
+

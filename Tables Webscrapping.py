@@ -138,5 +138,6 @@ for url in links:
 full_df[['Home/Away','Nr.','Jogador','JO','Min','Pts','RD+RORT','AS','3P%','2P%','LL%','BR','TO','FC','FR','ER','EN','+/-','EF','TBD2']] = df['Full Data'].str.split(',',expand=True)
 full_df = full_df.drop(columns=['TBD2','Full Data'])
 full_df=full_df[(full_df['Nr.'] != 'Nr.')]
+full_df['Jogador']=full_df['Jogador'].apply(lambda x: x.encode("iso-8859-1").decode("utf8","ignore"))
 full_df=full_df.reset_index(drop=True)
 full_df.to_csv("C:\\Users\\fcastro\\OneDrive - Digicorner\\TCC\\BRILHAMOS_v3.csv")

@@ -11,47 +11,50 @@ código de cada temporada
 url_parte1="https://lnb.com.br/nbb/tabela-de-jogos/?season%5B%5D="
 url_parte2="&wherePlaying=-1&played=-1"
 
-cod_temp={"20/21":"59",
+cod_temp={#"20/21":"59",
                "19/20":"54",
                "18/19":"47",
                "17/18":"41",
                #"16/17":"34",
-               "15/16":"27",
-               "14/15":"20",
-               "13/14":"15",
-               "12/13":"8",
-               "11/12":"4",
-               "10/11":"3",
-               "09/10":"2",
-               "08/09":"1"}
+               #"15/16":"27",
+               #"14/15":"20",
+               #"13/14":"15",
+               #"12/13":"8",
+               #"11/12":"4",
+               #"10/11":"3",
+               #"09/10":"2",
+              # "08/09":"1"
+               }
 
-jogos_temp={"20/21":[],
+jogos_temp={#"20/21":[],
                "19/20":[],
                "18/19":[],
                "17/18":[],
                #"16/17":[],
-               "15/16":[],
-               "14/15":[],
-               "13/14":[],
-               "12/13":[],
-               "11/12":[],
-               "10/11":[],
-               "09/10":[],
-               "08/09":[]}
+              # "15/16":[],
+               #"14/15":[],
+              # "13/14":[],
+              # "12/13":[],
+               #"11/12":[],
+               #"10/11":[],
+              # "09/10":[],
+              # "08/09":[]
+               }
 
-results_temp={"20/21":'',
+results_temp={#"20/21":'',
                "19/20":'',
                "18/19":'',
                "17/18":'',
                #"16/17":'',
-               "15/16":'',
-               "14/15":'',
-               "13/14":'',
-               "12/13":'',
-               "11/12":'',
-               "10/11":'',
-               "09/10":'',
-               "08/09":''}
+               #"15/16":'',
+               #"14/15":'',
+              # "13/14":'',
+              # "12/13":'',
+               #"11/12":'',
+               #"10/11":'',
+              # "09/10":'',
+              # "08/09":''
+               }
 
 df_results= pd.DataFrame()
 
@@ -83,7 +86,7 @@ for temp in cod_temp:
         index+=1
     df_temp = pd.DataFrame({'Season':temp,'Game Date':date,'Game Time':time,'Home Team':home_teams,
                    'Home Score':results_home,'Away Score':results_away,
-                   'Away Team':away_teams,'Report Link':jogos_temp[temp]
+                   'Away Team':away_teams,'Report Link':jogos_temp[temp][1:]
                    })
     df_results=df_results.append(df_temp)
     
@@ -91,19 +94,46 @@ for temp in cod_temp:
 
 links=[]
 df_results=df_results.reset_index(drop=True)
+df_results.to_csv("C:\\Users\\fcastro\\OneDrive - Digicorner\\TCC\\Resultados por Partida.csv")
+
 
 for item in df_results.index:
     links.append(df_results['Report Link'][item])
 
 full_df= pd.DataFrame()
+errors=[]
+
+# Problema dessa abordagem --> Nao consigo pegar a linha relacionada a equipe por esse metodo
+# Vejo 2 soluçoes: (1) a gente pega manualmente essa ultima linha ou (2) Ja que a gente tem os dados dos jogadores, podemos calcular o da equipe a partir destes dados
+
 for url in links:
+    try:
+        page = requests.get(url)
+        soup = BeautifulSoup(page.text, 'html.parser')
+
+        dfs = pd.read_html(page.text) #Aqui ele ja coloca em dataframe todas as tabelas que ele reconhcer na pagina
+
+        for i in range(2): #As duas primeiras sao as estats do Home team e Away team, respectivamente
+            if i == 0:
+                dfs[i]['Home/Away'] = 'Home'
+            else:
+                dfs[i]['Home/Away'] = 'Away'
+            dfs[i]['URL'] = url
+            full_df=full_df.append(dfs[i])
+            print("Result collected for " +str(url))
+    except:
+        errors=errors.append(url)
+        print("Error->"+str(url))
+
+full_df=full_df.reset_index(drop=True)
+full_df.to_csv("C:\\Users\\fcastro\\OneDrive - Digicorner\\TCC\\Resultados por Jogadores.csv")
+    
+'''
     try:
         page=requests.get(url)
         soup=BeautifulSoup(page.text,'html.parser')
-
         home_table=soup.find_all(class_="team_general_table tablesorter")
         away_table=soup.find_all(class_="team_two_table tablesorter")
-
     #essa parte temos que revisar! como pegar a tabela do time de casa e fora sem ser assim?
         try:
             home=home_table[0]
@@ -113,14 +143,12 @@ for url in links:
             away_table=soup.find_all(class_="stats_real_time_table_away")
             home=home_table[0]
             away=away_table[0]
-
         results=[]
         for row in home.find_all('tr'):
             result=[]
             result.append("Home"+row.text.replace("\n\r\n",",").replace(" ","").replace("\n",","))
             results.append(result)
     
-
         for row in away.find_all('tr'):
             result=[]
             result.append("Away"+row.text.replace("\n\r\n",",").replace(" ","").replace("\n",","))
@@ -133,11 +161,10 @@ for url in links:
     except:
         print("Error->"+str(url))
         pass
-
-
 full_df[['Home/Away','Nr.','Jogador','JO','Min','Pts','RD+RORT','AS','3P%','2P%','LL%','BR','TO','FC','FR','ER','EN','+/-','EF','TBD2']] = df['Full Data'].str.split(',',expand=True)
 full_df = full_df.drop(columns=['TBD2','Full Data'])
 full_df=full_df[(full_df['Nr.'] != 'Nr.')]
-full_df['Jogador']=full_df['Jogador'].apply(lambda x: x.encode("iso-8859-1").decode("utf8","ignore"))
 full_df=full_df.reset_index(drop=True)
 full_df.to_csv("C:\\Users\\fcastro\\OneDrive - Digicorner\\TCC\\BRILHAMOS_v3.csv")
+'''
+
